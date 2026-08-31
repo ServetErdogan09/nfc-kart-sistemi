@@ -37,12 +37,14 @@ router.get('/customers/new', (req, res) => {
 
 router.post('/customers', async (req, res, next) => {
   try {
-    await store.createCustomer({
+    const customer = await store.createCustomer({
       ...req.body,
       active: req.body.active === 'on',
       buttons: buttonsFromForm(req.body),
     });
-    res.redirect('/admin');
+    // Olusturduktan hemen sonra Duzenle sayfasina gonderiyoruz ki fotograf
+    // yukleme bolumune (musteri id'si gerektirdigi icin sadece orada var) hemen ulasilsin.
+    res.redirect(`/admin/customers/${customer.id}/edit`);
   } catch (err) {
     res.status(400).render('admin/form', {
       mode: 'create',
