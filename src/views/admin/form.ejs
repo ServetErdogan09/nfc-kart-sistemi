@@ -84,6 +84,39 @@
 
       <button class="btn-primary" type="submit"><%= mode === 'create' ? 'Oluştur' : 'Kaydet' %></button>
     </form>
+
+    <% if (mode === 'edit') { %>
+      <div class="card-form" style="margin-top:16px;">
+        <label style="font-size:13px;color:#b9bdc7;font-weight:600;">Fotoğraflar</label>
+
+        <div class="button-row">
+          <div class="button-row-header">
+            <span>👤 Profil Fotoğrafı (dairenin içinde görünür)</span>
+          </div>
+          <% if (customer.photoFilename) { %>
+            <img src="/uploads/<%= customer.photoFilename %>" alt="Profil" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">
+          <% } %>
+          <form method="POST" action="/admin/customers/<%= customer.id %>/photo/profile" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;">
+            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
+            <button class="btn-secondary" type="submit">Yükle</button>
+          </form>
+        </div>
+
+        <div class="button-row">
+          <div class="button-row-header">
+            <span>🖼️ Arka Plan Fotoğrafı (kartın tamamının arkasında görünür)</span>
+          </div>
+          <% if (customer.backgroundFilename) { %>
+            <img src="/uploads/<%= customer.backgroundFilename %>" alt="Arka plan" style="width:120px;height:64px;border-radius:8px;object-fit:cover;">
+          <% } %>
+          <form method="POST" action="/admin/customers/<%= customer.id %>/photo/background" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;">
+            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
+            <button class="btn-secondary" type="submit">Yükle</button>
+          </form>
+        </div>
+        <p style="font-size:12px;color:#8a8f9c;">JPG, PNG veya WEBP · en fazla 3MB. Arka plan fotoğrafının üstüne otomatik koyu bir gölge biner, yazılar her zaman okunaklı kalır.</p>
+      </div>
+    <% } %>
   </div>
 </body>
 </html>

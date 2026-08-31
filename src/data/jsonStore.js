@@ -50,6 +50,8 @@ function ensureDataFiles() {
           active: true,
           createdAt: new Date().toISOString(),
           statsToken: generateToken(),
+          photoFilename: null,
+          backgroundFilename: null,
           buttons: [
             {
               key: 'google',
@@ -153,6 +155,8 @@ async function createCustomer(data) {
       active: data.active !== false,
       createdAt: new Date().toISOString(),
       statsToken: generateToken(),
+      photoFilename: null,
+      backgroundFilename: null,
       buttons: normalizeButtons(data.buttons),
     };
     db.customers.push(customer);
@@ -215,6 +219,19 @@ async function regenerateStatsToken(id) {
     const idx = db.customers.findIndex((c) => c.id === id);
     if (idx === -1) throw new Error('Musteri bulunamadi.');
     db.customers[idx].statsToken = generateToken();
+    writeJson(CUSTOMERS_FILE, db);
+    return db.customers[idx];
+  });
+}
+
+async function setCustomerPhoto(id, kind, filename) {
+  return enqueue(async () => {
+    ensureDataFiles();
+    const db = readJson(CUSTOMERS_FILE);
+    const idx = db.customers.findIndex((c) => c.id === id);
+    if (idx === -1) throw new Error('Musteri bulunamadi.');
+    const field = kind === 'background' ? 'backgroundFilename' : 'photoFilename';
+    db.customers[idx][field] = filename;
     writeJson(CUSTOMERS_FILE, db);
     return db.customers[idx];
   });
@@ -302,6 +319,7 @@ module.exports = {
   updateCustomer,
   setCustomerActive,
   regenerateStatsToken,
+  setCustomerPhoto,
   deleteCustomer,
   recordView,
   recordClick,

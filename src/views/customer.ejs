@@ -7,9 +7,16 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <div class="card-page">
+  <div class="card-page<%= customer.backgroundFilename ? ' has-bg' : '' %>"
+       <% if (customer.backgroundFilename) { %>
+       style="background-image: linear-gradient(rgba(15,17,21,.78), rgba(15,17,21,.88)), url('/uploads/<%= customer.backgroundFilename %>');"
+       <% } %>>
     <div class="card" style="--accent: <%= customer.accentColor %>;">
-      <div class="badge"><%= customer.name.trim().charAt(0) %></div>
+      <% if (customer.photoFilename) { %>
+        <img class="badge-photo" src="/uploads/<%= customer.photoFilename %>" alt="<%= customer.name %>">
+      <% } else { %>
+        <div class="badge"><%= customer.name.trim().charAt(0) %></div>
+      <% } %>
       <h1 class="business-name"><%= customer.name %></h1>
       <% if (customer.subtitle) { %><p class="subtitle"><%= customer.subtitle %></p><% } %>
       <% if (customer.location) { %><p class="location">📍 <%= customer.location %></p><% } %>

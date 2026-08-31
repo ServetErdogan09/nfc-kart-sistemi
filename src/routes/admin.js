@@ -1,6 +1,7 @@
 const express = require('express');
 const store = require('../data');
 const { generateQrPngBuffer } = require('../utils/qr');
+const { uploadPhoto, deleteExistingPhotos, deleteAllPhotos } = require('../utils/uploads');
 
 const router = express.Router();
 
@@ -101,8 +102,28 @@ router.post('/customers/:id/stats-token/regenerate', async (req, res, next) => {
   }
 });
 
+router.post('/customers/:id/photo/:kind', (req, res) => {
+  uploadPhoto.single('photo')(req, res, async (err) => {
+    if (err) {
+      return res.status(400).send(err.message);
+    }
+    try {
+      const customer = await store.getCustomerById(req.params.id);
+      if (!customer) return res.status(404).send('Musteri bulunamadi.');
+      if (!req.file) return res.redirect(`/admin/customers/${customer.id}/edit`);
+
+      deleteExistingPhotos(customer.id, req.params.kind, req.file.filename);
+      await store.setCustomerPhoto(customer.id, req.params.kind, req.file.filename);
+      res.redirect(`/admin/customers/${customer.id}/edit`);
+    } catch (storeErr) {
+      res.status(500).send(storeErr.message);
+    }
+  });
+});
+
 router.post('/customers/:id/delete', async (req, res, next) => {
   try {
+    deleteAllPhotos(req.params.id);
     await store.deleteCustomer(req.params.id);
     res.redirect('/admin');
   } catch (err) {

@@ -6,6 +6,9 @@ const basicAuth = require('./middleware/basicAuth');
 const publicRoutes = require('./routes/public');
 const redirectRoutes = require('./routes/redirect');
 const adminRoutes = require('./routes/admin');
+const { UPLOADS_DIR, ensureUploadsDir } = require('./utils/uploads');
+
+ensureUploadsDir();
 
 const app = express();
 
@@ -18,6 +21,8 @@ app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+// Musteri profil/arka plan fotograflari, kalici diskteki (Volume) UPLOADS_DIR'dan servis edilir.
+app.use('/uploads', express.static(UPLOADS_DIR));
 
 // Sirali onemli: /admin ve /r once tanimlanmali, aksi halde /:slug
 // hepsini "musteri sayfasi" sanip yutar.
