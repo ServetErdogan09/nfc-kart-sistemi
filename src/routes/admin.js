@@ -92,6 +92,15 @@ router.post('/customers/:id/toggle', async (req, res, next) => {
   }
 });
 
+router.post('/customers/:id/stats-token/regenerate', async (req, res, next) => {
+  try {
+    await store.regenerateStatsToken(req.params.id);
+    res.redirect(`/admin/customers/${req.params.id}/stats`);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/customers/:id/delete', async (req, res, next) => {
   try {
     await store.deleteCustomer(req.params.id);

@@ -7,6 +7,19 @@ router.get('/', (req, res) => {
   res.type('text/plain').send('Dijital musteri karti servisi calisiyor.');
 });
 
+router.get('/istatistik/:token', async (req, res, next) => {
+  try {
+    const customer = await store.getCustomerByStatsToken(req.params.token);
+    if (!customer) {
+      return res.status(404).render('404');
+    }
+    const stats = await store.getStats(customer.slug);
+    res.render('customerStats', { customer, stats, catalog: store.BUTTON_CATALOG });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/:slug', async (req, res, next) => {
   try {
     const customer = await store.getCustomerBySlug(req.params.slug);

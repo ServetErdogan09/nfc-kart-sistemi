@@ -16,6 +16,14 @@ const BUTTON_CATALOG = [
   { key: 'campaigns', label: 'Kampanyalar', icon: '🎁' },
 ];
 
+// Bu kelimeler slug olarak kullanilamaz, cunku ayni isimde sabit rotalarimiz var
+// (orn. musteri slug'i "istatistik" olsaydi /istatistik/:token rotasiyla karisirdi).
+const RESERVED_SLUGS = ['admin', 'r', 'istatistik'];
+
+function generateToken() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
 // Ayni anda gelen yazma islemlerini siraya koyar; boylece iki istek
 // db.json'u ayni anda okuyup ustune yazarak birbirini ezmez.
 let writeQueue = Promise.resolve();
@@ -41,6 +49,7 @@ function ensureDataFiles() {
           accentColor: '#c9a24b',
           active: true,
           createdAt: new Date().toISOString(),
+          statsToken: generateToken(),
           buttons: [
             {
               key: 'google',
@@ -59,6 +68,20 @@ function ensureDataFiles() {
   }
   if (!fs.existsSync(EVENTS_FILE)) {
     fs.writeFileSync(EVENTS_FILE, JSON.stringify({ events: [] }, null, 2));
+  }
+
+  // Gecmiste olusturulmus, statsToken alani olmayan musterileri tamamlar.
+  // Boylece daha once canliya alinmis veriler de yeni ozellikten (musteri istatistik linki) faydalanir.
+  const db = readJson(CUSTOMERS_FILE);
+  let changed = false;
+  db.customers.forEach((c) => {
+    if (!c.statsToken) {
+      c.statsToken = generateToken();
+      changed = true;
+    }
+  });
+  if (changed) {
+    writeJson(CUSTOMERS_FILE, db);
   }
 }
 
@@ -114,6 +137,9 @@ async function createCustomer(data) {
     const db = readJson(CUSTOMERS_FILE);
     const slug = slugify(data.slug || data.name);
     if (!slug) throw new Error('Gecerli bir slug uretilemedi.');
+    if (RESERVED_SLUGS.includes(slug)) {
+      throw new Error(`"${slug}" adresi sistem tarafindan kullanildigi icin secilemez.`);
+    }
     if (db.customers.some((c) => c.slug === slug)) {
       throw new Error(`"${slug}" adresi zaten kullaniliyor.`);
     }
@@ -126,6 +152,7 @@ async function createCustomer(data) {
       accentColor: data.accentColor || '#c9a24b',
       active: data.active !== false,
       createdAt: new Date().toISOString(),
+      statsToken: generateToken(),
       buttons: normalizeButtons(data.buttons),
     };
     db.customers.push(customer);
@@ -143,6 +170,9 @@ async function updateCustomer(id, data) {
 
     const newSlug = slugify(data.slug || db.customers[idx].slug);
     if (!newSlug) throw new Error('Gecerli bir slug uretilemedi.');
+    if (RESERVED_SLUGS.includes(newSlug)) {
+      throw new Error(`"${newSlug}" adresi sistem tarafindan kullanildigi icin secilemez.`);
+    }
     const clashes = db.customers.some((c) => c.slug === newSlug && c.id !== id);
     if (clashes) throw new Error(`"${newSlug}" adresi baska bir musteride kullaniliyor.`);
 
@@ -168,6 +198,23 @@ async function setCustomerActive(id, active) {
     const idx = db.customers.findIndex((c) => c.id === id);
     if (idx === -1) throw new Error('Musteri bulunamadi.');
     db.customers[idx].active = active;
+    writeJson(CUSTOMERS_FILE, db);
+    return db.customers[idx];
+  });
+}
+
+async function getCustomerByStatsToken(token) {
+  const customers = await listCustomers();
+  return customers.find((c) => c.statsToken === token) || null;
+}
+
+async function regenerateStatsToken(id) {
+  return enqueue(async () => {
+    ensureDataFiles();
+    const db = readJson(CUSTOMERS_FILE);
+    const idx = db.customers.findIndex((c) => c.id === id);
+    if (idx === -1) throw new Error('Musteri bulunamadi.');
+    db.customers[idx].statsToken = generateToken();
     writeJson(CUSTOMERS_FILE, db);
     return db.customers[idx];
   });
@@ -250,9 +297,11 @@ module.exports = {
   listCustomers,
   getCustomerBySlug,
   getCustomerById,
+  getCustomerByStatsToken,
   createCustomer,
   updateCustomer,
   setCustomerActive,
+  regenerateStatsToken,
   deleteCustomer,
   recordView,
   recordClick,

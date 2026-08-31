@@ -3,29 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><%= customer.name %> — İstatistik</title>
+  <title><%= customer.name %> — İstatistiklerim</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <div class="admin-wrap">
-    <div class="admin-header">
+  <div class="admin-wrap" style="max-width:480px;">
+    <div class="admin-header" style="justify-content:center;">
       <h1><%= customer.name %></h1>
-      <a class="btn-secondary" href="/admin">← Listeye Dön</a>
-    </div>
-
-    <div class="address-box">
-      Karta / QR'a yazılacak adres: <strong><%= baseUrl %>/<%= customer.slug %></strong>
-    </div>
-
-    <div class="address-box" style="margin-top:12px;">
-      Müşterinin kendi istatistiklerini görebileceği link (şifre istemez, sadece bu müşteriye özel):<br>
-      <strong><%= baseUrl %>/istatistik/<%= customer.statsToken %></strong>
-      <div style="margin-top:10px;">
-        <form method="POST" action="/admin/customers/<%= customer.id %>/stats-token/regenerate"
-              onsubmit="return confirm('Eski link artik calismayacak, emin misin?');">
-          <button class="btn-secondary" type="submit">Yeni Link Oluştur (Eskisini Geçersiz Kılar)</button>
-        </form>
-      </div>
     </div>
 
     <div class="stat-grid">
@@ -47,13 +31,7 @@
       </tbody>
     </table>
 
-    <div class="qr-box">
-      <img src="/admin/customers/<%= customer.id %>/qr.png" alt="QR kod">
-      <div>
-        <p style="margin:0 0 10px;font-size:14px;color:#b9bdc7;">Fiziksel karta/etikete basılacak QR kod.</p>
-        <a class="btn-primary" href="/admin/customers/<%= customer.id %>/qr.png">QR PNG İndir</a>
-      </div>
-    </div>
+    <p class="footer-note" style="text-align:center;">Bu link size özeldir, başkasıyla paylaşmayın.</p>
   </div>
 </body>
 </html>
