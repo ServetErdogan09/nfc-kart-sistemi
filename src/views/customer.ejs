@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title><%= customer.name %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="card-page">
+    <div class="card" style="--accent: <%= customer.accentColor %>;">
+      <div class="badge"><%= customer.name.trim().charAt(0) %></div>
+      <h1 class="business-name"><%= customer.name %></h1>
+      <% if (customer.subtitle) { %><p class="subtitle"><%= customer.subtitle %></p><% } %>
+      <% if (customer.location) { %><p class="location">📍 <%= customer.location %></p><% } %>
+
+      <div class="buttons">
+        <% buttons.forEach(function(btn) { %>
+          <% if (btn.comingSoon) { %>
+            <div class="btn coming-soon">
+              <span class="icon"><%= btn.icon %></span>
+              <span><%= btn.label %></span>
+              <span class="tag">Yakında</span>
+            </div>
+          <% } else { %>
+            <a class="btn" href="/r/<%= customer.slug %>/<%= btn.key %>">
+              <span class="icon"><%= btn.icon %></span>
+              <span><%= btn.label %></span>
+            </a>
+          <% } %>
+        <% }); %>
+      </div>
+
+      <p class="footer-note">Dijital Müşteri Kartı</p>
+    </div>
+  </div>
+</body>
+</html>

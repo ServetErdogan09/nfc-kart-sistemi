@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <h1>Müşteriler</h1>
+      <a class="btn-primary" href="/admin/customers/new">+ Yeni Müşteri</a>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Ad</th>
+          <th>Adres</th>
+          <th>Durum</th>
+          <th>Görüntüleme</th>
+          <th>Tıklama</th>
+          <th>İşlemler</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function(row) { %>
+          <tr>
+            <td data-label="Ad"><%= row.customer.name %></td>
+            <td data-label="Adres"><%= baseUrl %>/<%= row.customer.slug %></td>
+            <td data-label="Durum">
+              <span class="status-pill <%= row.customer.active ? 'status-active' : 'status-inactive' %>">
+                <%= row.customer.active ? 'Aktif' : 'Pasif' %>
+              </span>
+            </td>
+            <td data-label="Görüntüleme"><%= row.totalViews %></td>
+            <td data-label="Tıklama"><%= row.totalClicks %></td>
+            <td data-label="İşlemler">
+              <div class="actions">
+                <a class="btn-secondary" href="/admin/customers/<%= row.customer.id %>/edit">Düzenle</a>
+                <a class="btn-secondary" href="/admin/customers/<%= row.customer.id %>/stats">İstatistik</a>
+                <form method="POST" action="/admin/customers/<%= row.customer.id %>/toggle" style="display:inline">
+                  <button class="btn-secondary" type="submit"><%= row.customer.active ? 'Pasife Al' : 'Aktifleştir' %></button>
+                </form>
+                <form method="POST" action="/admin/customers/<%= row.customer.id %>/delete" style="display:inline"
+                      onsubmit="return confirm('Bu müşteriyi kalıcı olarak silmek istediğine emin misin?');">
+                  <button class="btn-secondary btn-danger" type="submit">Sil</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

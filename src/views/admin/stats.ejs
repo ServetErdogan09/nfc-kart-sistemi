@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= customer.name %> — İstatistik</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <h1><%= customer.name %></h1>
+      <a class="btn-secondary" href="/admin">← Listeye Dön</a>
+    </div>
+
+    <div class="address-box">
+      Karta / QR'a yazılacak adres: <strong><%= baseUrl %>/<%= customer.slug %></strong>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-tile"><div class="value"><%= stats.totalViews %></div><div class="label">Toplam Görüntüleme</div></div>
+      <div class="stat-tile"><div class="value"><%= stats.totalClicks %></div><div class="label">Toplam Tıklama</div></div>
+      <div class="stat-tile"><div class="value"><%= stats.last7.views %> / <%= stats.last7.clicks %></div><div class="label">Son 7 Gün (Görüntüleme/Tıklama)</div></div>
+      <div class="stat-tile"><div class="value"><%= stats.last30.views %> / <%= stats.last30.clicks %></div><div class="label">Son 30 Gün (Görüntüleme/Tıklama)</div></div>
+    </div>
+
+    <table>
+      <thead><tr><th>Buton</th><th>Tıklama</th></tr></thead>
+      <tbody>
+        <% catalog.forEach(function (btn) { %>
+          <tr>
+            <td data-label="Buton"><%= btn.icon %> <%= btn.label %></td>
+            <td data-label="Tıklama"><%= stats.byButton[btn.key] || 0 %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+
+    <div class="qr-box">
+      <img src="/admin/customers/<%= customer.id %>/qr.png" alt="QR kod">
+      <div>
+        <p style="margin:0 0 10px;font-size:14px;color:#b9bdc7;">Fiziksel karta/etikete basılacak QR kod.</p>
+        <a class="btn-primary" href="/admin/customers/<%= customer.id %>/qr.png">QR PNG İndir</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= mode === 'create' ? 'Yeni Müşteri' : 'Müşteriyi Düzenle' %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<%
+  // customer iki farkli sekilden gelebilir:
+  // 1) store'dan gelen gercek kayit -> customer.buttons bir dizi [{key,active,target}]
+  // 2) hata sonrasi geri gonderilen form verisi (req.body) -> button_<key>_active / button_<key>_target alanlari duz
+  function buttonValue(key, field) {
+    if (customer && Array.isArray(customer.buttons)) {
+      var found = customer.buttons.find(function (b) { return b.key === key; });
+      return found ? found[field] : (field === 'target' ? '' : false);
+    }
+    if (customer) {
+      if (field === 'active') return customer['button_' + key + '_active'] === 'on';
+      return customer['button_' + key + '_target'] || '';
+    }
+    return field === 'target' ? '' : false;
+  }
+%>
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <h1><%= mode === 'create' ? 'Yeni Müşteri' : 'Müşteriyi Düzenle' %></h1>
+      <a class="btn-secondary" href="/admin">← Listeye Dön</a>
+    </div>
+
+    <% if (error) { %><div class="error-box"><%= error %></div><br/><% } %>
+
+    <form class="card-form" method="POST"
+          action="<%= mode === 'create' ? '/admin/customers' : '/admin/customers/' + customer.id %>">
+
+      <div class="field">
+        <label>İşletme Adı</label>
+        <input type="text" name="name" required value="<%= customer ? (customer.name || '') : '' %>">
+      </div>
+
+      <div class="field">
+        <label>Alt Başlık</label>
+        <input type="text" name="subtitle" value="<%= customer ? (customer.subtitle || '') : '' %>">
+      </div>
+
+      <div class="field">
+        <label>Konum</label>
+        <input type="text" name="location" value="<%= customer ? (customer.location || '') : '' %>">
+      </div>
+
+      <div class="field">
+        <label>Adres (slug) — kartta/QR'da kullanılacak</label>
+        <input type="text" name="slug" placeholder="orn. okan-atalay"
+               value="<%= customer ? (customer.slug || '') : '' %>">
+      </div>
+
+      <div class="field">
+        <label>Vurgu Rengi</label>
+        <input type="color" name="accentColor" value="<%= customer && customer.accentColor ? customer.accentColor : '#c9a24b' %>">
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="active" name="active" <%= (!customer || customer.active === true || customer.active === 'on') ? 'checked' : '' %>>
+        <label for="active">Aktif (sayfa erişime açık)</label>
+      </div>
+
+      <div class="field">
+        <label>Butonlar</label>
+        <% catalog.forEach(function (btn) { %>
+          <div class="button-row">
+            <div class="button-row-header">
+              <div class="checkbox-row">
+                <input type="checkbox" id="btn_<%= btn.key %>" name="button_<%= btn.key %>_active"
+                       <%= buttonValue(btn.key, 'active') ? 'checked' : '' %>>
+                <label for="btn_<%= btn.key %>"><%= btn.icon %> <%= btn.label %></label>
+              </div>
+            </div>
+            <input type="text" name="button_<%= btn.key %>_target" placeholder="Hedef link (boş bırakılırsa 'Yakında' görünür)"
+                   value="<%= buttonValue(btn.key, 'target') %>">
+          </div>
+        <% }); %>
+      </div>
+
+      <button class="btn-primary" type="submit"><%= mode === 'create' ? 'Oluştur' : 'Kaydet' %></button>
+    </form>
+  </div>
+</body>
+</html>
