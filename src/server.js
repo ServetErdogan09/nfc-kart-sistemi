@@ -9,6 +9,10 @@ const adminRoutes = require('./routes/admin');
 
 const app = express();
 
+// Railway gibi platformlar uygulamayi bir proxy arkasinda calistirir.
+// Bu olmadan req.protocol her zaman "http" doner ve QR/panel adresleri yanlis cikar.
+app.set('trust proxy', 1);
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
