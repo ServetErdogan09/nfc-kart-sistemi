@@ -19,27 +19,13 @@ function ensureUploadsDir() {
   }
 }
 
-// Dosya adini kullanicidan gelen isimden degil, musteri id'si + tur (profile/background)
-// kombinasyonundan turetiyoruz. Boylece hem dosya adi cakismasi/gizli yol (path traversal)
-// riski olmuyor, hem de bir sonraki yukleme otomatik olarak eskisinin yerine geciyor.
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    ensureUploadsDir();
-    cb(null, UPLOADS_DIR);
-  },
-  filename: (req, file, cb) => {
-    const ext = MIME_TO_EXT[file.mimetype] || '.jpg';
-    cb(null, `${req.params.id}-${req.params.kind}${ext}`);
-  },
-});
-
-const uploadPhoto = multer({
-  storage,
+// Yeni musteri olustururken henuz bir id yok, o yuzden dosyayi diske degil
+// once belleğe (buffer) aliyoruz; musteri kaydedilip id'si belli olduktan
+// sonra savePhotoBuffer ile gercek dosya adiyla diske yaziyoruz.
+const upload = multer({
+  storage: multer.memoryStorage(),
   limits: { fileSize: 3 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (!PHOTO_KINDS.includes(req.params.kind)) {
-      return cb(new Error('Gecersiz fotograf turu.'));
-    }
     if (!MIME_TO_EXT[file.mimetype]) {
       return cb(new Error('Sadece JPG, PNG veya WEBP resim yukleyebilirsin.'));
     }
@@ -66,4 +52,15 @@ function deleteAllPhotos(customerId) {
   PHOTO_KINDS.forEach((kind) => deleteExistingPhotos(customerId, kind, null));
 }
 
-module.exports = { UPLOADS_DIR, PHOTO_KINDS, uploadPhoto, deleteExistingPhotos, deleteAllPhotos, ensureUploadsDir };
+// Multer'in bellekte tuttugu dosyayi (file.buffer) musterinin id'sine gore
+// adlandirip kalici diske yazar, eski (farkli uzantili) surumunu temizler.
+function savePhotoBuffer(customerId, kind, file) {
+  ensureUploadsDir();
+  const ext = MIME_TO_EXT[file.mimetype] || '.jpg';
+  const filename = `${customerId}-${kind}${ext}`;
+  deleteExistingPhotos(customerId, kind, filename);
+  fs.writeFileSync(path.join(UPLOADS_DIR, filename), file.buffer);
+  return filename;
+}
+
+module.exports = { UPLOADS_DIR, PHOTO_KINDS, upload, savePhotoBuffer, deleteAllPhotos, ensureUploadsDir };

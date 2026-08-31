@@ -1,9 +1,17 @@
 const express = require('express');
 const store = require('../data');
 const { generateQrPngBuffer } = require('../utils/qr');
-const { uploadPhoto, deleteExistingPhotos, deleteAllPhotos } = require('../utils/uploads');
+const { upload, savePhotoBuffer, deleteAllPhotos } = require('../utils/uploads');
 
 const router = express.Router();
+
+// Ana musteri formu tek seferde hem metin alanlarini hem de (secilmisse) profil/arka
+// plan fotograflarini gonderiyor. Bu middleware ikisini birden ayristirir:
+// metin alanlari req.body'ye, dosyalar req.files'a duser.
+const uploadFields = upload.fields([
+  { name: 'photoProfile', maxCount: 1 },
+  { name: 'photoBackground', maxCount: 1 },
+]);
 
 function getBaseUrl(req) {
   return process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
@@ -15,6 +23,25 @@ function buttonsFromForm(body) {
     active: body[`button_${key}_active`] === 'on',
     target: (body[`button_${key}_target`] || '').trim(),
   }));
+}
+
+// Formda secilmis dosya varsa diske yazip musteri kaydina isliyor; secilmemisse
+// dokunmuyor (duzenlemede mevcut fotograf oldugu gibi kalir).
+async function saveUploadedPhotos(customerId, files) {
+  if (files?.photoProfile?.[0]) {
+    const filename = savePhotoBuffer(customerId, 'profile', files.photoProfile[0]);
+    await store.setCustomerPhoto(customerId, 'profile', filename);
+  }
+  if (files?.photoBackground?.[0]) {
+    const filename = savePhotoBuffer(customerId, 'background', files.photoBackground[0]);
+    await store.setCustomerPhoto(customerId, 'background', filename);
+  }
+}
+
+function runUploadFields(req, res) {
+  return new Promise((resolve, reject) => {
+    uploadFields(req, res, (err) => (err ? reject(err) : resolve()));
+  });
 }
 
 router.get('/', async (req, res, next) => {
@@ -35,16 +62,16 @@ router.get('/customers/new', (req, res) => {
   });
 });
 
-router.post('/customers', async (req, res, next) => {
+router.post('/customers', async (req, res) => {
   try {
+    await runUploadFields(req, res);
     const customer = await store.createCustomer({
       ...req.body,
       active: req.body.active === 'on',
       buttons: buttonsFromForm(req.body),
     });
-    // Olusturduktan hemen sonra Duzenle sayfasina gonderiyoruz ki fotograf
-    // yukleme bolumune (musteri id'si gerektirdigi icin sadece orada var) hemen ulasilsin.
-    res.redirect(`/admin/customers/${customer.id}/edit`);
+    await saveUploadedPhotos(customer.id, req.files);
+    res.redirect('/admin');
   } catch (err) {
     res.status(400).render('admin/form', {
       mode: 'create',
@@ -65,13 +92,15 @@ router.get('/customers/:id/edit', async (req, res, next) => {
   }
 });
 
-router.post('/customers/:id', async (req, res, next) => {
+router.post('/customers/:id', async (req, res) => {
   try {
+    await runUploadFields(req, res);
     await store.updateCustomer(req.params.id, {
       ...req.body,
       active: req.body.active === 'on',
       buttons: buttonsFromForm(req.body),
     });
+    await saveUploadedPhotos(req.params.id, req.files);
     res.redirect('/admin');
   } catch (err) {
     const customer = { ...req.body, id: req.params.id };
@@ -102,25 +131,6 @@ router.post('/customers/:id/stats-token/regenerate', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
-
-router.post('/customers/:id/photo/:kind', (req, res) => {
-  uploadPhoto.single('photo')(req, res, async (err) => {
-    if (err) {
-      return res.status(400).send(err.message);
-    }
-    try {
-      const customer = await store.getCustomerById(req.params.id);
-      if (!customer) return res.status(404).send('Musteri bulunamadi.');
-      if (!req.file) return res.redirect(`/admin/customers/${customer.id}/edit`);
-
-      deleteExistingPhotos(customer.id, req.params.kind, req.file.filename);
-      await store.setCustomerPhoto(customer.id, req.params.kind, req.file.filename);
-      res.redirect(`/admin/customers/${customer.id}/edit`);
-    } catch (storeErr) {
-      res.status(500).send(storeErr.message);
-    }
-  });
 });
 
 router.post('/customers/:id/delete', async (req, res, next) => {
